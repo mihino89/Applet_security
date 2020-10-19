@@ -15,14 +15,26 @@ import javacard.framework.*;
  */
 public class Penazenka extends Applet {
     
-    public final static byte PENAZENKA_CLA = (byte)0x80;
+    // CLA Byte variables
+    public final static byte PENAZENKA_CLA = (byte)0x80;   
     
+    // INS Byte variables
     public final static byte RETURN_NAME = (byte)0x00;
     public final static byte ACCEPT = (byte)0x01;   
     public final static byte SEND_BACK = (byte)0x02;
+    public final static byte VERIFY = (byte) 0x20;
     
-    byte [] arr;
-    byte length_arr;
+    // ERROR codes
+    // signal that the PIN verification failed
+    final static short SW_VERIFICATION_FAILED = 0x6300;
+    
+    // signal the PIN validation is required
+    // for a credit or a debit transaction
+    final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
+    
+    // OTHER global variables
+    protected byte [] arr;
+    protected byte length_arr;
     
     // maximum number of incorrect tries before the
     // PIN is blocked
@@ -96,8 +108,12 @@ public class Penazenka extends Applet {
     }
     
     private void accept(APDU apdu){
-        byte[] buffer = apdu.getBuffer();
+        // returns true if the PIN was successfully checked in this session
+        if ( ! pin.isValidated()){
+            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+        }
         
+        byte[] buffer = apdu.getBuffer();        
         // Lc tells us the incoming apdu command length
         short bytesLeft1 = (short) (buffer[ISO7816.OFFSET_LC]);              
                
@@ -110,6 +126,11 @@ public class Penazenka extends Applet {
     }
     
     private void send_back(APDU apdu){
+        // returns true if the PIN was successfully checked in this session
+        if ( ! pin.isValidated()){
+            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+        }
+        
         byte length_t = (byte) apdu.setOutgoing();
                 
         // Handle wrong expected length
@@ -120,6 +141,18 @@ public class Penazenka extends Applet {
         }
                
         apdu.sendBytesLong(arr, (short)0, length_arr);   
+    }
+    
+    private void verify(APDU apdu){
+        byte[] buffer = apdu.getBuffer();
+        
+        // retrieve the PIN data for validation.
+        byte byteRead = (byte)(apdu.setIncomingAndReceive());
+        
+        if ( pin.check(buffer, ISO7816.OFFSET_CDATA,byteRead) == false || 
+                pin.getTriesRemaining() <= 0 ){
+            ISOException.throwIt(SW_VERIFICATION_FAILED);
+        }
     }
 
     /**
@@ -155,7 +188,10 @@ public class Penazenka extends Applet {
                 
             // INS=0x02 sends back data received using 0x01, at most as many bytes, as are expected (Le), and as were received previously
             case SEND_BACK: send_back(apdu);                         
-                break;
+                return;
+                
+            case VERIFY: verify(apdu);
+                return;
             
             // Handle an incorrect value of INS    
             default:
