@@ -1,5 +1,4 @@
 /*
- * https://www.programcreek.com/java-api-examples/?api=javacard.framework.OwnerPIN
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -230,26 +229,23 @@ public class Penazenka extends Applet {
     private void return_hash(APDU apdu){        
         byte []buffer = apdu.getBuffer();
         short bytesToSend, dlzka_hashu;
+        
         bytesToSend = (byte) apdu.setOutgoing();
 
         md.reset();
         dlzka_hashu = md.doFinal( name, (short) 0, (short) name.length, hash, (short) 0);
-        
-        if( dlzka_hashu != bytesToSend ){
-            ISOException.throwIt( (short)(0x6C00 + (short) name.length) );
-        }
         
         apdu.setOutgoingLength((short) dlzka_hashu);
         apdu.sendBytesLong(hash, (short) 0, (short) dlzka_hashu);
     }
     
     private void sign_data(APDU apdu){
-        if ( ! pin.isValidated()){
-            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-        }
+//        if ( ! pin.isValidated()){
+//            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+//        }
         
         byte[] buffer = apdu.getBuffer();
-        short tmpMessageLength, signLen, bytesLeft1;
+        short tmpMessageLength, signLen;
         tmpMessageLength = (byte) apdu.setIncomingAndReceive();           
                
         if (tmpMessageLength > (short)128) {
