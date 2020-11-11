@@ -10,12 +10,12 @@ tab.
 -->
 <deploy>
     <applet>
-        <applet-AID>//aid/AC58AFA704/DB</applet-AID>
+        <applet-AID>//aid/AC58AFA704/DC</applet-AID>
         <class-name-hint>classicapplet2.Penazenka</class-name-hint>
         <display-name-hint>Classic Applet2</display-name-hint>
         <instance>
             <instance-AID>//aid/AC58AFA704/DC</instance-AID>
-            <deployment-params><![CDATA[]]></deployment-params>
+            <deployment-params><![CDATA[00010203]]></deployment-params>
         </instance>
     </applet>
 
